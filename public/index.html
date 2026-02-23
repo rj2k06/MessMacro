@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MessMacro — Know What You Eat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0f13;
+  --surface: #16181f;
+  --surface2: #1e2029;
+  --border: #2a2d38;
+  --accent: #f7c843;
+  --accent2: #ff6b35;
+  --green: #4ade80;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+  --red: #f87171;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --radius: 16px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* AUTH SCREEN */
+#auth-screen {
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, #f7c84322 0%, transparent 60%),
+              radial-gradient(ellipse 60% 40% at 80% 80%, #ff6b3511 0%, transparent 50%),
+              var(--bg);
+  padding:20px;
+}
+.auth-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:24px;
+  width:100%; max-width:440px; padding:48px 40px; position:relative; overflow:hidden;
+}
+.auth-card::before {
+  content:''; position:absolute; top:-1px; left:20%; right:20%; height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+}
+.auth-logo { text-align:center; margin-bottom:32px; }
+.auth-logo h1 { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; letter-spacing:-0.5px; }
+.auth-logo h1 span { color:var(--accent); }
+.auth-logo p { color:var(--muted); font-size:14px; margin-top:6px; }
+.tab-switch { display:flex; background:var(--bg); border-radius:12px; padding:4px; margin-bottom:28px; }
+.tab-btn { flex:1; padding:10px; border:none; border-radius:8px; font-family:'DM Sans',sans-serif;
+  font-size:14px; font-weight:500; cursor:pointer; transition:.2s; color:var(--muted); background:none; }
+.tab-btn.active { background:var(--surface2); color:var(--text); }
+.form-group { margin-bottom:16px; }
+.form-group label { display:block; font-size:12px; font-weight:500; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; }
+.form-group input {
+  width:100%; padding:12px 16px; background:var(--bg); border:1px solid var(--border);
+  border-radius:10px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px;
+  transition:.2s; outline:none;
+}
+.form-group input:focus { border-color:var(--accent); box-shadow:0 0 0 3px #f7c84318; }
+.form-group select:focus { border-color:var(--accent); box-shadow:0 0 0 3px #f7c84318; outline:none; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.btn-primary {
+  width:100%; padding:14px; background:var(--accent); color:#0e0f13;
+  border:none; border-radius:10px; font-family:'Syne',sans-serif; font-size:15px;
+  font-weight:700; cursor:pointer; transition:.2s; margin-top:8px;
+}
+.btn-primary:hover { background:#ffd466; transform:translateY(-1px); }
+.btn-primary:active { transform:translateY(0); }
+.auth-error { background:#f871710d; border:1px solid #f8717130; border-radius:8px;
+  padding:10px 14px; color:var(--red); font-size:13px; margin-bottom:12px; display:none; }
+
+/* MAIN APP */
+#app { display:none; min-height:100vh; }
+
+/* NAV */
+nav {
+  position:sticky; top:0; z-index:100; background:var(--bg); border-bottom:1px solid var(--border);
+  padding:0 24px; display:flex; align-items:center; justify-content:space-between; height:64px;
+  backdrop-filter:blur(20px);
+}
+.nav-logo { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; }
+.nav-logo span { color:var(--accent); }
+.nav-right { display:flex; align-items:center; gap:16px; }
+.user-chip { background:var(--surface); border:1px solid var(--border); border-radius:20px;
+  padding:6px 14px; font-size:13px; display:flex; align-items:center; gap:8px; }
+.user-avatar { width:28px; height:28px; background:var(--accent); border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif;
+  font-size:12px; font-weight:800; color:#0e0f13; }
+.btn-logout { background:none; border:1px solid var(--border); border-radius:8px;
+  padding:6px 12px; color:var(--muted); font-size:13px; cursor:pointer; transition:.2s; }
+.btn-logout:hover { border-color:var(--red); color:var(--red); }
+
+/* NAV TABS */
+.nav-tabs { display:flex; gap:4px; }
+.nav-tab { padding:8px 16px; border-radius:8px; border:none; background:none;
+  font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; color:var(--muted);
+  cursor:pointer; transition:.2s; }
+.nav-tab.active { background:var(--surface); color:var(--text); }
+.nav-tab:hover:not(.active) { color:var(--text); }
+
+/* PAGES */
+.page { display:none; max-width:1100px; margin:0 auto; padding:32px 24px; }
+.page.active { display:block; }
+
+/* DASHBOARD */
+.dash-header { margin-bottom:32px; }
+.dash-header h2 { font-family:'Syne',sans-serif; font-size:32px; font-weight:800; }
+.dash-header p { color:var(--muted); margin-top:6px; }
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+.stat-card .stat-label { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:8px; }
+.stat-card .stat-value { font-family:'Syne',sans-serif; font-size:28px; font-weight:700; }
+.stat-card .stat-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+.cal-color { color:var(--accent); }
+.pro-color { color:var(--blue); }
+.carb-color { color:var(--purple); }
+.fat-color { color:var(--accent2); }
+
+/* TODAY'S MENU SECTION */
+.section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.section-header h3 { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; }
+.day-selector { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+.day-btn { padding:8px 16px; border-radius:20px; border:1px solid var(--border);
+  background:none; color:var(--muted); font-size:13px; cursor:pointer; transition:.2s; }
+.day-btn.active { background:var(--accent); color:#0e0f13; border-color:var(--accent); font-weight:600; }
+.meal-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+.meal-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+.meal-card h4 { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:14px;
+  display:flex; align-items:center; gap:8px; }
+.meal-icon { font-size:18px; }
+.food-item { display:flex; align-items:center; justify-content:space-between; padding:8px 0;
+  border-bottom:1px solid var(--border); }
+.food-item:last-child { border-bottom:none; }
+.food-name { font-size:14px; font-weight:500; }
+.food-cal { font-size:13px; font-weight:600; color:var(--accent); background:#f7c84314;
+  padding:3px 8px; border-radius:6px; }
+.food-macros-mini { font-size:11px; color:var(--muted); margin-top:2px; }
+.no-menu-msg { text-align:center; padding:48px 20px; color:var(--muted); }
+.no-menu-msg .big-emoji { font-size:48px; margin-bottom:12px; }
+
+/* MACRO LOOKUP */
+.lookup-area { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:24px; }
+.search-bar { display:flex; gap:12px; margin-bottom:0; }
+.search-input { flex:1; padding:14px 16px; background:var(--bg); border:1px solid var(--border);
+  border-radius:10px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; outline:none; transition:.2s; }
+.search-input:focus { border-color:var(--accent); }
+.btn-search { padding:14px 24px; background:var(--accent); color:#0e0f13;
+  border:none; border-radius:10px; font-family:'Syne',sans-serif; font-weight:700; cursor:pointer; white-space:nowrap; }
+.btn-search:hover { background:#ffd466; }
+.results-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+.macro-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; transition:.2s; }
+.macro-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.macro-card.not-found { opacity:.6; }
+.macro-card-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; }
+.macro-card-name { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; }
+.macro-card-category { font-size:11px; background:var(--surface2); padding:3px 8px; border-radius:6px; color:var(--muted); }
+.macro-card-serving { font-size:12px; color:var(--muted); margin-top:4px; }
+.macros-bars { display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+.macro-bar-row { display:flex; align-items:center; gap:10px; }
+.macro-bar-label { font-size:12px; width:60px; color:var(--muted); }
+.macro-bar-track { flex:1; height:6px; background:var(--bg); border-radius:3px; overflow:hidden; }
+.macro-bar-fill { height:100%; border-radius:3px; transition:width .5s ease; }
+.macro-bar-val { font-size:12px; font-weight:600; width:36px; text-align:right; }
+.cal-bar { background:var(--accent); }
+.pro-bar { background:var(--blue); }
+.carb-bar { background:var(--purple); }
+.fat-bar { background:var(--accent2); }
+.fiber-bar { background:var(--green); }
+.big-cal { font-family:'Syne',sans-serif; font-size:32px; font-weight:800; color:var(--accent); }
+.big-cal span { font-size:14px; font-weight:400; color:var(--muted); }
+.hint-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.hint-chip { padding:6px 12px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:20px; font-size:12px; color:var(--muted); cursor:pointer; transition:.2s; }
+.hint-chip:hover { border-color:var(--accent); color:var(--accent); }
+
+/* MENU EDITOR */
+.editor-layout { display:grid; grid-template-columns:1fr 360px; gap:24px; align-items:start; }
+.editor-main { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; }
+.hostel-input-row { display:flex; gap:12px; margin-bottom:24px; }
+.hostel-input { flex:1; padding:12px 16px; background:var(--bg); border:1px solid var(--border);
+  border-radius:10px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; outline:none; }
+.hostel-input:focus { border-color:var(--accent); }
+.day-meal-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:8px; }
+.day-meal-cell { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px; }
+.day-meal-cell label { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); display:block; margin-bottom:6px; }
+.day-meal-cell textarea { width:100%; background:none; border:none; outline:none;
+  color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; resize:none; height:80px; line-height:1.5; }
+.week-day-header { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; margin:16px 0 8px;
+  color:var(--accent); text-transform:uppercase; letter-spacing:1px; }
+.btn-save { background:var(--accent); color:#0e0f13; border:none; border-radius:10px;
+  padding:12px 28px; font-family:'Syne',sans-serif; font-weight:700; cursor:pointer; font-size:15px; transition:.2s; }
+.btn-save:hover { background:#ffd466; }
+.save-msg { font-size:13px; color:var(--green); margin-left:12px; display:none; }
+.editor-sidebar { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; position:sticky; top:80px; }
+.sidebar-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:12px; }
+.food-list { display:flex; flex-direction:column; gap:4px; max-height:500px; overflow-y:auto; }
+.food-list-item { display:flex; align-items:center; justify-content:space-between;
+  padding:6px 10px; border-radius:8px; cursor:pointer; transition:.15s; font-size:13px; }
+.food-list-item:hover { background:var(--surface2); }
+.food-list-item .fcal { font-size:12px; color:var(--accent); }
+.cat-header { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); padding:8px 10px 4px; }
+.filter-input { width:100%; padding:10px 12px; background:var(--bg); border:1px solid var(--border);
+  border-radius:8px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; margin-bottom:12px; }
+
+/* TOASTS */
+.toast { position:fixed; bottom:24px; right:24px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:12px; padding:14px 20px; font-size:14px; z-index:999; transform:translateY(80px);
+  opacity:0; transition:.3s; max-width:320px; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.success { border-color:#4ade8066; }
+.toast.error { border-color:#f8717166; }
+
+/* PROGRESS RINGS */
+.macro-summary-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
+.macro-pill { background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:12px 16px; flex:1; min-width:120px; }
+.macro-pill .mp-label { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
+.macro-pill .mp-val { font-family:'Syne',sans-serif; font-size:22px; font-weight:700; margin-top:4px; }
+
+/* RESPONSIVE */
+@media(max-width:768px) {
+  .stats-row { grid-template-columns:repeat(2,1fr); }
+  .meal-grid { grid-template-columns:1fr; }
+  .editor-layout { grid-template-columns:1fr; }
+  .day-meal-grid { grid-template-columns:repeat(2,1fr); }
+  nav { padding:0 16px; }
+  .nav-tabs { display:none; }
+  .page { padding:20px 16px; }
+  .auth-card { padding:32px 24px; }
+}
+
+/* LOADING SPINNER */
+.spinner { display:inline-block; width:18px; height:18px; border:2px solid transparent;
+  border-top-color:currentColor; border-radius:50%; animation:spin .6s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* FADE IN */
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+.fade-up { animation:fadeUp .4s ease both; }
+
+/* DIVIDER */
+.divider { height:1px; background:var(--border); margin:20px 0; }
+
+.empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
+.empty-state .es-icon { font-size:52px; margin-bottom:16px; }
+.empty-state p { font-size:15px; }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>Mess<span>Macro</span></h1>
+      <p>Know exactly what you're eating, every day.</p>
+    </div>
+    <div class="tab-switch">
+      <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+      <button class="tab-btn" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+
+    <!-- LOGIN FORM -->
+    <div id="login-form">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="login-email" placeholder="you@college.edu" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Login to MessMacro</button>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div id="signup-form" style="display:none">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Your full name" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Roll Number</label>
+          <input type="text" id="signup-roll" placeholder="21CSB001" />
+        </div>
+        <div class="form-group">
+          <label>Mess Type</label>
+          <select id="signup-hostel" style="width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;cursor:pointer;transition:.2s;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22><path fill=%22%236b7280%22 d=%22M6 8L1 3h10z%22/></svg>');background-repeat:no-repeat;background-position:right 14px center;">
+            <option value="" disabled selected>Select your mess</option>
+            <option value="Veg">🥦 Veg</option>
+            <option value="Nonveg">🍗 Nonveg</option>
+            <option value="Special">⭐ Special</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="signup-email" placeholder="you@college.edu" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-password" placeholder="Min 6 characters" onkeydown="if(event.key==='Enter')doSignup()" />
+      </div>
+      <button class="btn-primary" onclick="doSignup()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <nav>
+    <div class="nav-logo">Mess<span>Macro</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
+      <button class="nav-tab" onclick="showPage('lookup')">Macro Lookup</button>
+      <button class="nav-tab" onclick="showPage('editor')">Edit Menu</button>
+    </div>
+    <div class="nav-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span id="user-name-chip">Student</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- DASHBOARD PAGE -->
+  <div id="page-dashboard" class="page active">
+    <div class="dash-header fade-up">
+      <h2>Good <span id="time-greeting">morning</span>, <span id="dash-name">Student</span> 👋</h2>
+      <p id="dash-hostel-label" style="color:var(--muted)">Loading your mess menu...</p>
+    </div>
+
+    <!-- Day selector -->
+    <div class="day-selector" id="day-selector"></div>
+
+    <!-- Today's stats -->
+    <div class="stats-row fade-up" id="today-stats">
+      <div class="stat-card"><div class="stat-label">Total Calories</div><div class="stat-value cal-color" id="stat-cal">—</div><div class="stat-sub">kcal</div></div>
+      <div class="stat-card"><div class="stat-label">Protein</div><div class="stat-value pro-color" id="stat-pro">—</div><div class="stat-sub">grams</div></div>
+      <div class="stat-card"><div class="stat-label">Carbohydrates</div><div class="stat-value carb-color" id="stat-carb">—</div><div class="stat-sub">grams</div></div>
+      <div class="stat-card"><div class="stat-label">Fats</div><div class="stat-value fat-color" id="stat-fat">—</div><div class="stat-sub">grams</div></div>
+    </div>
+
+    <div class="section-header">
+      <h3 id="selected-day-label">Today's Menu</h3>
+    </div>
+    <div class="meal-grid fade-up" id="meal-grid"></div>
+    <div id="no-menu" class="no-menu-msg" style="display:none">
+      <div class="big-emoji">🍽️</div>
+      <p>No menu set for your hostel yet.<br>Go to <strong>Edit Menu</strong> tab to add one!</p>
+    </div>
+  </div>
+
+  <!-- MACRO LOOKUP PAGE -->
+  <div id="page-lookup" class="page">
+    <div class="dash-header fade-up">
+      <h2>Macro Lookup</h2>
+      <p>Search any food item to see its nutritional information</p>
+    </div>
+    <div class="lookup-area fade-up">
+      <div class="search-bar">
+        <input type="text" class="search-input" id="lookup-input" placeholder="e.g. paneer, dal, biryani, idli... (comma separated for multiple)" />
+        <button class="btn-search" onclick="doLookup()">Lookup 🔍</button>
+      </div>
+      <div class="hint-chips" id="hint-chips"></div>
+    </div>
+    <div class="results-grid" id="lookup-results"></div>
+    <div class="empty-state" id="lookup-empty">
+      <div class="es-icon">🥘</div>
+      <p>Search for any Indian mess food to see its macros</p>
+    </div>
+  </div>
+
+  <!-- MENU EDITOR PAGE -->
+  <div id="page-editor" class="page">
+    <div class="dash-header fade-up">
+      <h2>Edit Mess Menu</h2>
+      <p>Set up your hostel's weekly menu with food items</p>
+    </div>
+    <div class="editor-layout fade-up">
+      <div class="editor-main">
+        <div class="hostel-input-row">
+          <select class="hostel-input" id="editor-hostel" style="cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22><path fill=%22%236b7280%22 d=%22M6 8L1 3h10z%22/></svg>');background-repeat:no-repeat;background-position:right 14px center;background-color:var(--bg);">
+            <option value="" disabled>Select mess to load/edit</option>
+            <option value="Veg">🥦 Veg Mess</option>
+            <option value="Nonveg">🍗 Nonveg Mess</option>
+            <option value="Special">⭐ Special Mess</option>
+          </select>
+          <button class="btn-save" onclick="loadExistingMenu()">Load</button>
+        </div>
+        <div id="week-editor"></div>
+        <div style="display:flex;align-items:center;margin-top:20px;">
+          <button class="btn-save" onclick="saveMenu()">💾 Save Menu</button>
+          <span class="save-msg" id="save-msg">✓ Menu saved successfully!</span>
+        </div>
+      </div>
+      <div class="editor-sidebar">
+        <div class="sidebar-title">🗃️ Food Reference</div>
+        <input type="text" class="filter-input" id="food-filter" placeholder="Filter foods..." oninput="filterFoods()" />
+        <div class="food-list" id="food-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('mm_token');
+let currentUser = JSON.parse(localStorage.getItem('mm_user') || 'null');
+let macrosDB = {};
+let currentMenu = {};
+let selectedDay = new Date().getDay();
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MEALS = ['Breakfast','Lunch','Snacks','Dinner'];
+const MEAL_ICONS = { Breakfast:'🌅', Lunch:'☀️', Snacks:'🍟', Dinner:'🌙' };
+
+// ─── AUTH ──────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0)===(tab==='login')));
+  document.getElementById('login-form').style.display = tab==='login' ? '' : 'none';
+  document.getElementById('signup-form').style.display = tab==='signup' ? '' : 'none';
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) return showAuthError('Please fill all fields');
+  try {
+    const res = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
+    const data = await res.json();
+    if (!res.ok) return showAuthError(data.error);
+    onLoginSuccess(data);
+  } catch(e) { showAuthError('Server error. Is the backend running?'); }
+}
+
+async function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const hostel = document.getElementById('signup-hostel').value;
+  const rollNo = document.getElementById('signup-roll').value.trim();
+  if (!name || !email || !password) return showAuthError('Please fill required fields');
+  if (!hostel) return showAuthError('Please select your mess type');
+  if (password.length < 6) return showAuthError('Password must be at least 6 characters');
+  try {
+    const res = await fetch('/api/auth/signup', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,email,password,hostel,rollNo}) });
+    const data = await res.json();
+    if (!res.ok) return showAuthError(data.error);
+    onLoginSuccess(data);
+  } catch(e) { showAuthError('Server error. Is the backend running?'); }
+}
+
+function onLoginSuccess({token: t, user}) {
+  token = t; currentUser = user;
+  localStorage.setItem('mm_token', t);
+  localStorage.setItem('mm_user', JSON.stringify(user));
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  initApp();
+}
+
+function doLogout() {
+  token = null; currentUser = null;
+  localStorage.removeItem('mm_token'); localStorage.removeItem('mm_user');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+// ─── INIT ──────────────────────────────────────────────
+async function initApp() {
+  // Set greeting
+  const h = new Date().getHours();
+  document.getElementById('time-greeting').textContent = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+  document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
+  document.getElementById('user-name-chip').textContent = currentUser.name.split(' ')[0];
+  document.getElementById('user-avatar').textContent = currentUser.name[0].toUpperCase();
+  if (currentUser.hostel) {
+    const messIcons = { 'Veg': '🥦', 'Nonveg': '🍗', 'Special': '⭐' };
+    const icon = messIcons[currentUser.hostel] || '📍';
+    document.getElementById('dash-hostel-label').textContent = icon + ' ' + currentUser.hostel + ' Mess';
+  }
+
+  // Build day selector
+  const ds = document.getElementById('day-selector');
+  DAYS.forEach((d, i) => {
+    const b = document.createElement('button');
+    b.className = 'day-btn' + (i === selectedDay ? ' active' : '');
+    b.textContent = d;
+    b.onclick = () => selectDay(i);
+    ds.appendChild(b);
+  });
+
+  // Load macros DB & menu
+  await loadMacrosDB();
+  buildFoodList();
+  buildWeekEditor();
+  buildHintChips();
+  if (currentUser.hostel) await loadMenu(currentUser.hostel);
+  renderDashboard();
+}
+
+async function loadMacrosDB() {
+  try {
+    const res = await fetch('/api/macros/database', { headers: { Authorization: 'Bearer ' + token } });
+    macrosDB = await res.json();
+  } catch(e) {}
+}
+
+async function loadMenu(hostel) {
+  try {
+    const res = await fetch('/api/menu/' + encodeURIComponent(hostel), { headers: { Authorization: 'Bearer ' + token } });
+    const data = await res.json();
+    if (data.menu) currentMenu = data.menu;
+    else currentMenu = {};
+  } catch(e) { currentMenu = {}; }
+}
+
+// ─── DASHBOARD ─────────────────────────────────────────
+function selectDay(idx) {
+  selectedDay = idx;
+  document.querySelectorAll('.day-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
+  document.getElementById('selected-day-label').textContent = DAYS[idx] + "'s Menu";
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const dayMenu = currentMenu[DAYS[selectedDay]];
+  const grid = document.getElementById('meal-grid');
+  const noMenu = document.getElementById('no-menu');
+  
+  if (!dayMenu || Object.keys(dayMenu).length === 0) {
+    grid.style.display = 'none';
+    noMenu.style.display = 'block';
+    updateStats([]);
+    return;
+  }
+  grid.style.display = 'grid';
+  noMenu.style.display = 'none';
+  grid.innerHTML = '';
+
+  let allItems = [];
+  MEALS.forEach(meal => {
+    const items = (dayMenu[meal] || '').split('\n').map(s=>s.trim()).filter(Boolean);
+    allItems = allItems.concat(items);
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.innerHTML = `<h4><span class="meal-icon">${MEAL_ICONS[meal]}</span>${meal}</h4>`;
+    if (items.length === 0) {
+      card.innerHTML += `<p style="color:var(--muted);font-size:13px;">No items</p>`;
+    } else {
+      items.forEach(item => {
+        const macros = findMacros(item);
+        card.innerHTML += `
+          <div class="food-item">
+            <div>
+              <div class="food-name">${capitalize(item)}</div>
+              ${macros ? `<div class="food-macros-mini">${macros.protein}g protein · ${macros.carbs}g carbs · ${macros.fat}g fat</div>` : '<div class="food-macros-mini" style="color:var(--muted)">Macros not found</div>'}
+            </div>
+            ${macros ? `<div class="food-cal">${macros.calories} kcal</div>` : ''}
+          </div>`;
+      });
+    }
+    grid.appendChild(card);
+  });
+  updateStats(allItems);
+}
+
+function updateStats(items) {
+  let cal=0, pro=0, carb=0, fat=0;
+  items.forEach(item => {
+    const m = findMacros(item);
+    if (m) { cal += m.calories; pro += m.protein; carb += m.carbs; fat += m.fat; }
+  });
+  document.getElementById('stat-cal').textContent = Math.round(cal) || '—';
+  document.getElementById('stat-pro').textContent = Math.round(pro) || '—';
+  document.getElementById('stat-carb').textContent = Math.round(carb) || '—';
+  document.getElementById('stat-fat').textContent = Math.round(fat) || '—';
+}
+
+function findMacros(item) {
+  const key = item.toLowerCase().trim();
+  if (macrosDB[key]) return macrosDB[key];
+  const partial = Object.keys(macrosDB).find(k => k.includes(key) || key.includes(k));
+  return partial ? macrosDB[partial] : null;
+}
+
+// ─── MACRO LOOKUP ───────────────────────────────────────
+function buildHintChips() {
+  const hints = ['paneer butter masala','dal tadka','biryani','idli','samosa','rajma','chole','poha','khichdi','gulab jamun'];
+  const container = document.getElementById('hint-chips');
+  hints.forEach(h => {
+    const chip = document.createElement('span');
+    chip.className = 'hint-chip';
+    chip.textContent = h;
+    chip.onclick = () => { document.getElementById('lookup-input').value = h; doLookup(); };
+    container.appendChild(chip);
+  });
+}
+
+async function doLookup() {
+  const input = document.getElementById('lookup-input').value.trim();
+  if (!input) return;
+  const items = input.split(',').map(s=>s.trim()).filter(Boolean);
+  document.getElementById('lookup-empty').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/macros/lookup', {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({ items })
+    });
+    const data = await res.json();
+    renderLookupResults(data.results);
+  } catch(e) { showToast('Error fetching macros', 'error'); }
+}
+
+function renderLookupResults(results) {
+  const container = document.getElementById('lookup-results');
+  container.innerHTML = '';
+  const maxCal = Math.max(...results.map(r => r.calories || 0), 400);
+
+  results.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'macro-card' + (!r.found ? ' not-found' : '') + ' fade-up';
+    if (!r.found) {
+      card.innerHTML = `
+        <div class="macro-card-header"><div><div class="macro-card-name">${capitalize(r.item)}</div><div class="macro-card-serving" style="color:var(--red)">Not found in database</div></div></div>
+        <p style="font-size:13px;color:var(--muted)">Try a different spelling or a simpler name.</p>`;
+    } else {
+      card.innerHTML = `
+        <div class="macro-card-header">
+          <div>
+            <div class="macro-card-name">${capitalize(r.item)}</div>
+            <div class="macro-card-serving">${r.serving || ''}${r.note ? ' · <em>'+r.note+'</em>' : ''}</div>
+          </div>
+          <span class="macro-card-category">${r.category || ''}</span>
+        </div>
+        <div class="big-cal">${r.calories} <span>kcal</span></div>
+        <div class="macros-bars">
+          ${macroBar('Protein', r.protein, 50, 'var(--blue)', 'g')}
+          ${macroBar('Carbs', r.carbs, 100, 'var(--purple)', 'g')}
+          ${macroBar('Fat', r.fat, 50, 'var(--accent2)', 'g')}
+          ${macroBar('Fiber', r.fiber, 20, 'var(--green)', 'g')}
+        </div>`;
+    }
+    container.appendChild(card);
+  });
+}
+
+function macroBar(label, val, max, color, unit) {
+  const pct = Math.min(100, (val / max) * 100);
+  return `<div class="macro-bar-row">
+    <div class="macro-bar-label">${label}</div>
+    <div class="macro-bar-track"><div class="macro-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    <div class="macro-bar-val" style="color:${color}">${val}${unit}</div>
+  </div>`;
+}
+
+// ─── MENU EDITOR ────────────────────────────────────────
+function buildWeekEditor() {
+  const container = document.getElementById('week-editor');
+  container.innerHTML = '';
+  DAYS.forEach(day => {
+    const header = document.createElement('div');
+    header.className = 'week-day-header';
+    header.textContent = '📅 ' + day;
+    container.appendChild(header);
+    const grid = document.createElement('div');
+    grid.className = 'day-meal-grid';
+    MEALS.forEach(meal => {
+      const cell = document.createElement('div');
+      cell.className = 'day-meal-cell';
+      cell.innerHTML = `<label>${MEAL_ICONS[meal]} ${meal}</label>
+        <textarea id="editor-${day}-${meal}" placeholder="e.g. idli, sambar, coconut chutney"></textarea>`;
+      grid.appendChild(cell);
+    });
+    container.appendChild(grid);
+  });
+  if (currentUser.hostel) {
+    const editorSelect = document.getElementById('editor-hostel');
+    if (editorSelect) editorSelect.value = currentUser.hostel;
+  }
+}
+
+async function loadExistingMenu() {
+  const hostel = document.getElementById('editor-hostel').value.trim();
+  if (!hostel) return showToast('Enter hostel name first', 'error');
+  await loadMenu(hostel);
+  // Populate editor
+  DAYS.forEach(day => {
+    MEALS.forEach(meal => {
+      const ta = document.getElementById(`editor-${day}-${meal}`);
+      if (ta && currentMenu[day]) ta.value = currentMenu[day][meal] || '';
+    });
+  });
+  showToast('Menu loaded for ' + hostel, 'success');
+}
+
+async function saveMenu() {
+  const hostel = document.getElementById('editor-hostel').value.trim();
+  if (!hostel) return showToast('Enter hostel name', 'error');
+  const menu = {};
+  DAYS.forEach(day => {
+    menu[day] = {};
+    MEALS.forEach(meal => {
+      const ta = document.getElementById(`editor-${day}-${meal}`);
+      menu[day][meal] = ta ? ta.value.trim() : '';
+    });
+  });
+  try {
+    const res = await fetch('/api/menu/save', {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({ hostel, menu })
+    });
+    if (res.ok) {
+      currentMenu = menu;
+      showToast('Menu saved successfully! ✓', 'success');
+      const msg = document.getElementById('save-msg');
+      msg.style.display = 'inline'; setTimeout(() => msg.style.display='none', 3000);
+      renderDashboard();
+    }
+  } catch(e) { showToast('Error saving menu', 'error'); }
+}
+
+// ─── FOOD LIST SIDEBAR ──────────────────────────────────
+function buildFoodList() {
+  filterFoods();
+}
+
+function filterFoods() {
+  const q = (document.getElementById('food-filter')?.value || '').toLowerCase();
+  const container = document.getElementById('food-list');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const grouped = {};
+  Object.entries(macrosDB).forEach(([name, data]) => {
+    if (q && !name.includes(q)) return;
+    if (!grouped[data.category]) grouped[data.category] = [];
+    grouped[data.category].push({ name, ...data });
+  });
+
+  Object.entries(grouped).forEach(([cat, items]) => {
+    const ch = document.createElement('div');
+    ch.className = 'cat-header';
+    ch.textContent = cat;
+    container.appendChild(ch);
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'food-list-item';
+      el.innerHTML = `<span>${capitalize(item.name)}</span><span class="fcal">${item.calories} kcal</span>`;
+      el.onclick = () => {
+        document.getElementById('lookup-input').value = item.name;
+        showPage('lookup');
+        doLookup();
+      };
+      container.appendChild(el);
+    });
+  });
+}
+
+// ─── NAVIGATION ─────────────────────────────────────────
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['dashboard','lookup','editor'][i] === page);
+  });
+  document.getElementById('page-' + page).classList.add('active');
+  if (page === 'editor') buildFoodList();
+}
+
+// ─── UTILITIES ──────────────────────────────────────────
+function capitalize(str) { return str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type;
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── BOOT ───────────────────────────────────────────────
+if (token && currentUser) {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  initApp();
+}
+</script>
+</body>
+</html>

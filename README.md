@@ -41,47 +41,6 @@ Open your browser at: **http://localhost:3000**
 
 ---
 
-## 🌐 Deploy to the Web (Free Options)
-
-### Option A: Railway.app (Easiest — Recommended)
-1. Go to https://railway.app and sign up (free)
-2. Click "New Project" → "Deploy from GitHub"
-3. Push your code to GitHub first:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin https://github.com/YOUR_USERNAME/messmacro.git
-   git push -u origin main
-   ```
-4. Connect your GitHub repo in Railway
-5. Add environment variable: `JWT_SECRET=your_secret_here`
-6. Railway gives you a live URL like `https://messmacro-production.up.railway.app`
-7. ✅ Done! Share the URL with your friends.
-
-### Option B: Render.com (Also Free)
-1. Go to https://render.com and sign up
-2. Click "New" → "Web Service"
-3. Connect your GitHub repo
-4. Settings:
-   - Build Command: `npm install`
-   - Start Command: `npm start`
-5. Add environment variable: `JWT_SECRET=your_secret_here`
-6. Click Deploy → get a free URL
-
-### Option C: Run on Your Laptop (Local Network)
-If you want friends on the same WiFi to access it:
-```bash
-# Find your local IP
-ipconfig   # Windows
-ifconfig   # Mac/Linux
-
-# Run server, others can access at http://YOUR_IP:3000
-npm start
-```
-
----
-
 ## 📦 Project Structure
 ```
 messmacro/
